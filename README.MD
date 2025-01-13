@@ -44,6 +44,10 @@ mkdir -p ~/ros2_ws/src
 ● Extract and copy openNISDk_ROS2_xxx.tar.gz to ~/ros2_ws/src/
 ● Install libusb rules
 
+```
+git clone https://github.com/Oyefusi-Samuel/ros2_astra_camera.git
+```
+
 ```bash
 cd ~/ros2_ws/src/ros2_astra_camera/astra_camera/scripts
 sudo bash install.sh
