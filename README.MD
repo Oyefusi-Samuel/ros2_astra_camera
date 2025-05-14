@@ -1,270 +1,179 @@
-# ros2_astra_camera
+#ros2_astra_camera
 
-A ROS2 driver for Orbbec 3D cameras
+A ROS 2 Humble driver for Orbbec 3D cameras
 
-## Install dependencies
+Install dependencies
+--------------------
+ROS 2
 
-### ROS2
+● Please refer to the official ROS 2 Humble installation guide
 
-● Please refer to the
-official [ROS 2 installation guide](https://docs.ros.org/en/galactic/Installation/Ubuntu-Install-Debians.html)
+Other dependencies
 
-### other dependencies
+● Install system and ROS 2 dependencies:
 
-● Install dependencies (be careful with your ROS distribution)
+# Make sure you have sourced the ROS 2 Humble environment
+sudo apt install libgflags-dev \
+  ros-humble-image-geometry \
+  ros-humble-camera-info-manager \
+  ros-humble-image-transport \
+  ros-humble-image-publisher \
+  libgoogle-glog-dev \
+  libusb-1.0-0-dev \
+  libeigen3-dev
 
-```bash
- Assuming you have sourced the ros environment, same below
-sudo apt install libgflags-dev  ros-$ROS_DISTRO-image-geometry ros-$ROS_DISTRO-camera-info-manager\
-ros-$ROS_DISTRO-image-transport ros-$ROS_DISTRO-image-publisher libgoogle-glog-dev libusb-1.0-0-dev libeigen3-dev
-
-```
-
-● Install libuvc
-
-```bash
+Install libuvc
+--------------
 git clone https://github.com/libuvc/libuvc.git
 cd libuvc
 mkdir build && cd build
 cmake .. && make -j4
 sudo make install
-sudo ldconfig # Refreshing the link library
-```
+sudo ldconfig
 
-### Getting Started
+Getting Started
+---------------
+Use Case
 
-#### Use cases
-
-● Create a new ros2 workspace
-
-```bash
+● Create a new ROS 2 workspace:
 mkdir -p ~/ros2_ws/src
-```
+cd ~/ros2_ws/src
 
-● Extract and copy openNISDk_ROS2_xxx.tar.gz to ~/ros2_ws/src/
-● Install libusb rules
-
-```
+● Clone the driver:
 git clone https://github.com/Oyefusi-Samuel/ros2_astra_camera.git
-```
 
-```bash
+● Install udev rules:
 cd ~/ros2_ws/src/ros2_astra_camera/astra_camera/scripts
 sudo bash install.sh
 sudo udevadm control --reload-rules && sudo udevadm trigger
-```
 
-● Compiling
+Build the workspace
+-------------------
+cd ~/ros2_ws
+source /opt/ros/humble/setup.bash
+colcon build --event-handlers console_direct+ --cmake-args -DCMAKE_BUILD_TYPE=Release
 
-```bash
- cd ~/ros2_ws
-source /opt/ros/galactic/setup.bash 
-colcon build --event-handlers  console_direct+  --cmake-args  -DCMAKE_BUILD_TYPE=Release
-```
-
-Starting the camera
-
-● In terminal 1
-
-```bash
-source /opt/ros/galactic/setup.bash 
-source ./install/setup.bash 
+Launch the camera
+-----------------
+Terminal 1:
+source /opt/ros/humble/setup.bash
+source ~/ros2_ws/install/setup.bash
 ros2 launch astra_camera astra.launch.xml
-```
 
-● In terminal 2
-
-```bash
-source /opt/ros/galactic/setup.bash 
-source ./install/setup.bash 
+Terminal 2:
+source /opt/ros/humble/setup.bash
+source ~/ros2_ws/install/setup.bash
 rviz2
-```
 
-● List topics / services/ parameters (open a new terminal)
+Useful ROS 2 commands
+---------------------
+source /opt/ros/humble/setup.bash
 
-```bash
-source /opt/ros/galactic/setup.bash 
 ros2 topic list
-ros2 service list 
+ros2 service list
 ros2 param list
-```
 
-Select the topic you want to display
-
-● Get camera parameters
-
-```bash
+Service Usage Examples
+----------------------
+Camera Info:
 ros2 service call /camera/get_camera_info astra_camera_msgs/srv/GetCameraInfo '{}'
-```
-
-● Check camera parameters, please refer to the ROS documentation for the meaning of the specific fields of the camera
-parameters  [camera info](http://docs.ros.org/en/melodic/api/sensor_msgs/html/msg/CameraInfo.html)
-
-```bash
 ros2 topic echo /camera/depth/camera_info
 ros2 topic echo /camera/color/camera_info
-```
 
-● Check device information
-
-```bash
+Device Info:
 ros2 service call /camera/get_device_info astra_camera_msgs/srv/GetDeviceInfo '{}'
-```
+ros2 service call /camera/get_sdk_version astra_camera_msgs/srv/GetString "{}"
 
-● Get the SDK version
+Exposure Settings:
+# Disable auto exposure first
+ros2 service call /camera/set_color_auto_exposure std_srvs/srv/SetBool '{data: false}'
+ros2 service call /camera/set_uvc_auto_exposure std_srvs/srv/SetBool '{data: false}'
+ros2 service call /camera/set_ir_auto_exposure std_srvs/srv/SetBool '{data: false}'
 
-```bash
-ros2 service call /camera/get_sdk_version  astra_camera_msgs/srv/GetString "{}"
-```
+# Set exposure
+ros2 service call /camera/set_color_exposure astra_camera_msgs/srv/SetInt32 '{data: 2000}'
+ros2 service call /camera/set_uvc_exposure astra_camera_msgs/srv/SetInt32 '{data: 2000}'
+ros2 service call /camera/set_ir_exposure astra_camera_msgs/srv/SetInt32 '{data: 2000}'
 
-● Set/get (auto) exposure
+# Get exposure
+ros2 service call /camera/get_color_exposure astra_camera_msgs/srv/GetInt32 '{}'
+ros2 service call /camera/get_uvc_exposure astra_camera_msgs/srv/GetInt32 '{}'
+ros2 service call /camera/get_ir_exposure astra_camera_msgs/srv/GetInt32 '{}'
 
-```bash
- # Auto exposure switch. For setting the exposure manually, please turn off the auto exposure first
- ros2 service call /camera/set_color_auto_exposure std_srvs/srv/SetBool '{data: false}' 
- ros2 service call /camera/set_uvc_auto_exposure std_srvs/srv/SetBool '{data: false}'
- ros2 service call /camera/set_ir_auto_exposure std_srvs/srv/SetBool "{data: false}"
-    
-# Setting exposure values
-ros2 service call /camera/set_ir_exposure astra_camera_msgs/srv/SetInt32 "{data: 2000}"
-ros2 service call /camera/set_color_exposure astra_camera_msgs/srv/SetInt32 "{data: 2000}"
-ros2 service call /camera/set_uvc_exposure astra_camera_msgs/srv/SetInt32 "{data: 2000}"
- # Get exposure
- ros2 service call /camera/get_ir_exposure astra_camera_msgs/srv/GetInt32 "{}"
- ros2 service call /camera/get_color_exposure astra_camera_msgs/srv/GetInt32 "{}"
- ros2 service call /camera/get_uvc_exposure astra_camera_msgs/srv/GetInt32 "{}"
-```
+Gain Settings:
+# Set gain
+ros2 service call /camera/set_color_gain astra_camera_msgs/srv/SetInt32 '{data: 200}'
+ros2 service call /camera/set_ir_gain astra_camera_msgs/srv/SetInt32 '{data: 200}'
+ros2 service call /camera/set_uvc_gain astra_camera_msgs/srv/SetInt32 '{data: 200}'
 
-● Set/get gain
+# Get gain
+ros2 service call /camera/get_color_gain astra_camera_msgs/srv/GetInt32 '{}'
+ros2 service call /camera/get_ir_gain astra_camera_msgs/srv/GetInt32 '{}'
+ros2 service call /camera/get_uvc_gain astra_camera_msgs/srv/GetInt32 '{}'
 
-```bash
-# Get Gain
-ros2 service call /camera/get_color_gain astra_camera_msgs/srv/GetInt32 '{}' # OpenNI camera
-ros2 service call /camera/get_ir_gain astra_camera_msgs/srv/GetInt32 '{}' # OpenNI camera
-ros2 service call /camera/get_uvc_gain astra_camera_msgs/srv/GetInt32 "{}" # UVC camera
- # Setting the gain
-ros2 service call /camera/set_color_gain astra_camera_msgs/srv/SetInt32 "{data: 200}"
-ros2 service call /camera/set_ir_gain astra_camera_msgs/srv/SetInt32 "{data: 200}"
-ros2 service call /camera/set_uvc_gain astra_camera_msgs/srv/SetInt32 "{data: 200}"
-```
-
-● Set mirror mode
-
-```bash
+Misc Controls
+-------------
+Mirror Mode:
 ros2 service call /camera/set_color_mirror std_srvs/srv/SetBool '{data: true}'
 ros2 service call /camera/set_ir_mirror std_srvs/srv/SetBool '{data: true}'
 ros2 service call /camera/set_depth_mirror std_srvs/srv/SetBool '{data: true}'
 ros2 service call /camera/set_uvc_color_mirror std_srvs/srv/SetBool '{data: true}'
-```
 
-● Set/get (auto) white balance
-
-```bash
-ros2 service call /camera/get_color_auto_white_balance astra_camera_msgs/srv/GetInt32 '{}' # Return 0 or 1
+White Balance:
+ros2 service call /camera/get_color_auto_white_balance astra_camera_msgs/srv/GetInt32 '{}'
 ros2 service call /camera/set_color_auto_white_balance std_srvs/srv/SetBool '{data: false}'
-```
 
-● Turn on/off laser
+Enable/Disable Features:
+# Laser
+ros2 service call /camera/set_laser_enable std_srvs/srv/SetBool '{data: true}'
+ros2 service call /camera/set_laser_enable std_srvs/srv/SetBool '{data: false}'
 
-```bash
-ros2 service call /camera/set_laser_enable std_srvs/srv/SetBool '{data: true}' # Turn on
-ros2 service call /camera/set_laser_enable std_srvs/srv/SetBool '{data: false}' #Turn off
-```
+# Fan
+ros2 service call /camera/set_fan_mode std_srvs/srv/SetBool '{data: true}'
+ros2 service call /camera/set_fan_mode std_srvs/srv/SetBool '{data: false}'
 
-● Turn on/off fan
-
-```bash
- ros2 service call /camera/set_fan_mode std_srvs/srv/SetBool '{data: true}' #Turn on
- ros2 service call /camera/set_fan_mode std_srvs/srv/SetBool '{data: false}' # Turn off
-```
-
-● Turn LDP on/off
-
-```bash
+# LDP
 ros2 service call /camera/set_ldp_enable std_srvs/srv/SetBool '{data: true}'
 ros2 service call /camera/set_ldp_enable std_srvs/srv/SetBool '{data: false}'
-```
 
-● Turn sensors on/off
+# Toggle sensors
+ros2 service call /camera/toggle_ir std_srvs/srv/SetBool '{data: true}'
+ros2 service call /camera/toggle_color std_srvs/srv/SetBool '{data: true}'
+ros2 service call /camera/toggle_depth std_srvs/srv/SetBool '{data: true}'
+ros2 service call /camera/toggle_uvc_camera std_srvs/srv/SetBool '{data: true}'
 
-```bash
-ros2 service call  /camera/toggle_ir std_srvs/srv/SetBool "{data: true}"
-ros2 service call  /camera/toggle_color std_srvs/srv/SetBool "{data: true}"
-ros2 service call  /camera/toggle_depth std_srvs/srv/SetBool "{data: true}"
-ros2 service call /camera/toggle_uvc_camera std_srvs/srv/SetBool "{data : true}"
-```
-
-### Multi-Camera
-
-● First, get the serial number of the camera, plug in the camera and run
-
-```bash
+Multi-Camera Setup
+------------------
+Get serial numbers:
 ros2 run astra_camera list_devices_node
-```
 
-● Set the parameter device_num to the number of cameras
+Edit the multi_astra.launch.xml file and update the serial numbers accordingly.
 
-● Go to the `ros2_astra_camera/launch/multi_xxx.launch`   and change the serial number. Currently, different cameras can
-only be distinguished by the serial number,
+Clear shared memory (important!):
+ros2 run astra_camera cleanup_shm_node
 
-```xml
-<launch>
-    <!-- unique camera name-->
-    <arg name="camera_name" default="camera"/>
-    <!-- Hardware depth registration -->
-    <arg name="3d_sensor" default="astra"/>
-    <!-- stereo_s_u3, astrapro, astra -->
-    <arg name="camera1_prefix" default="01"/>
-    <arg name="camera2_prefix" default="02"/>
-    <arg name="camera1_serila_number" default="ADA611300CE"/>
-    <arg name="camera2_serila_number" default="sn123456789"/>
-    <arg name="device_num" default="2"/>
-    <node name="camera" pkg="astra_camera" type="cleanup_shm_node" output="screen"/>
-    <include file="$(find-pkg-share astra_camera)/launch/$(arg 3d_sensor).launch.xml">
-        <arg name="camera_name" value="$(var camera_name)_$(var camera1_prefix)"/>
-        <arg name="serial_number" value="$(var camera1_serila_number)"/>
-        <arg name="device_num" value="$(var device_num)"/>
-    </include>
-
-    <include file="$(ind-pkg-share astra_camera)/launch/$(var 3d_sensor).launch.xml">
-        <arg name="camera_name" value="$(var camera_name)_$(var camera2_prefix)"/>
-        <arg name="serial_number" value="$(var camera2_serila_number)"/>
-        <arg name="device_num" value="$(var device_num)"/>
-    </include>
-    <node pkg="tf2_ros" exec="static_transform_publisher" name="camera_tf"
-          args="0 0 0 0 0 0 camera01_link camera02_link"/>
-</launch>
-```
-
-* astra camera will use semaphore to do process synchronization,
-if the camera start fails, the semaphore file may be left in the `/dev/shm`,
-causing the next start to be stuck.
-Before launch, please run
-
-```bash
-ros2 run astra_camera cleanup_shm_node 
-```
-
-to clean up `/dev/shm/`.
-
-* Launch
-
-```bash
+Launch multi-camera:
 ros2 launch astra_camera multi_astra.launch.xml
-```
 
-## Use calibration camera parameter
+Use Calibration Camera Parameters
+---------------------------------
+Update the launch file:
+<arg name="ir_info_url" default="file:///your_ir_camera_calib_path/depth_camera.yaml"/>
+<arg name="color_info_url" default="file:///your_color_camera_calib_path/rgb_camera.yaml"/>
 
-* Set camera info url, Go to `xxx.launch`
-
-```xml
-<launch>
-    <!--...-->
-    <arg name="ir_info_url" default="file:///you_ir_camera_calib_path/depth_camera.yaml"/>
-    <arg name="color_info_url" default="file:///you_depth_camera_calib_path/rgb_camera.yaml"/>
-    <!--...-->
-</launch>
-```
+Sample YAML format:
+image_width: 640
+image_height: 480
+camera_name: rgb_camera
+camera_matrix:
+  rows: 3
+  cols: 3
+  data: [517.301, 0, 326.785, 0, 519.291, 244.563, 0, 0, 1]
+distortion_model: plumb_bob
+distortion_coefficients:
+  rows: 1
+  cols: 5
+  data: [0.1, -0.25, 0.001, 0.0005, 0.1]
 
 * Calibration file should be like
 
